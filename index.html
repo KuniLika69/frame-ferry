@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#161218">
+  <meta name="description" content="сделай уровень из своего видео. обведи предметы в кадре, а потом перематывай видео прям во время игры.">
+  <title>Frame Ferry — уровень из твоего видео</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="physics.js"></script>
+  <script defer src="sample.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body data-mode="edit">
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="brand" aria-label="Frame Ferry">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span aria-hidden="true">FRAME<span class="brand-slash">/</span>FERRY</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="demo-button" class="button button-ghost">открыть демо</button>
+        <button type="button" id="export-button" class="button button-quiet" disabled>скачать уровень</button>
+        <label for="video-input" id="upload-button" class="button button-accent">
+          <span aria-hidden="true">↥</span> открыть видео
+          <input id="video-input" type="file" accept="video/*,.mp4,.webm,.mov,.ferry" class="visually-hidden">
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main class="workbench">
+    <section class="project-heading" aria-labelledby="project-title">
+      <div class="project-name">
+        <h1 id="project-title">редактор уровней</h1>
+        <p>сделай уровень из своего видео и перематывай его прям во время игры.</p>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Режим">
+        <button type="button" id="edit-mode" aria-pressed="true"><span aria-hidden="true">◇</span> монтаж</button>
+        <button type="button" id="play-mode" aria-pressed="false"><span aria-hidden="true">▶</span> играть</button>
+      </div>
+    </section>
+
+    <div class="workspace-grid">
+      <section class="viewer" aria-label="Кадр и шкала видео">
+        <div class="viewer-head">
+          <div class="clip">
+            <span class="clip-icon" aria-hidden="true">▤</span>
+            <div class="clip-titles">
+              <strong id="clip-name">Книга-паром</strong>
+              <span id="clip-info">уровень для пробы</span>
+            </div>
+          </div>
+          <span id="mode-label" class="mode-label">монтаж</span>
+        </div>
+        <div id="stage-shell" class="stage-shell">
+          <video id="video-source" preload="auto" muted playsinline hidden></video>
+          <canvas id="scene" width="960" height="540" tabindex="-1" aria-label="Игровой кадр">кадр не показывается. попробуй открыть игру в Chrome или Edge.</canvas>
+        </div>
+        <div class="timeline">
+          <div class="timeline-top">
+            <button type="button" id="toggle-video" class="button button-quiet transport" aria-label="запустить видео" title="запустить видео">▶</button>
+            <label for="scrub">время видео</label>
+            <output id="timecode" for="scrub" class="timecode">00:00 / 00:00</output>
+          </div>
+          <div class="timeline-track">
+            <input id="scrub" type="range" min="0" max="5" step="0.01" value="0">
+            <div id="timeline-marks" role="group" aria-label="Ключевые кадры выбранной платформы"></div>
+          </div>
+          <p id="stage-note" class="stage-note">выбери инструмент и отметь предмет в кадре.</p>
+        </div>
+        <div id="game-controls" class="game-controls" role="group" aria-label="Управление героем" hidden>
+          <button type="button" class="button button-quiet game-key" data-control="left" aria-label="Влево">←</button>
+          <button type="button" class="button button-quiet game-key" data-control="right" aria-label="Вправо">→</button>
+          <button type="button" class="button button-quiet game-key game-jump" data-control="jump">прыгнуть</button>
+          <button type="button" id="restart-button" class="button button-ghost">на старт</button>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="Инструменты и объекты уровня">
+        <section id="draw-tools" class="inspector-panel" aria-labelledby="draw-title">
+          <h2 id="draw-title">инструменты</h2>
+          <div class="tool-grid" role="group" aria-label="Инструменты монтажа">
+            <button type="button" id="select-tool" class="tool-card" aria-pressed="false">
+              <span class="tool-icon icon-select" aria-hidden="true">⌖</span>
+              <span>выбрать</span>
+            </button>
+            <button type="button" id="static-tool" class="tool-card" aria-pressed="true">
+              <span class="tool-icon icon-static" aria-hidden="true">▱</span>
+              <span>платформа</span>
+            </button>
+            <button type="button" id="moving-tool" class="tool-card" aria-pressed="false">
+              <span class="tool-icon icon-moving" aria-hidden="true">↔</span>
+              <span>движущаяся платформа</span>
+            </button>
+            <button type="button" id="keyframe-tool" class="tool-card" aria-pressed="false">
+              <span class="tool-icon icon-moving" aria-hidden="true">◆</span>
+              <span>добавить ключевой кадр</span>
+            </button>
+            <button type="button" id="start-tool" class="tool-card" aria-pressed="false">
+              <span class="tool-icon icon-start" aria-hidden="true">◉</span>
+              <span>старт</span>
+            </button>
+            <button type="button" id="finish-tool" class="tool-card" aria-pressed="false">
+              <span class="tool-icon icon-finish" aria-hidden="true">⚑</span>
+              <span>финиш</span>
+            </button>
+          </div>
+        </section>
+        <section class="inspector-panel object-panel" aria-labelledby="objects-title">
+          <h2 id="objects-title">что на уровне</h2>
+          <div id="object-list" class="object-list"></div>
+          <div class="object-actions">
+            <button type="button" id="delete-button" class="button button-quiet" disabled>удалить</button>
+            <button type="button" id="clear-button" class="button button-ghost" disabled>очистить</button>
+          </div>
+        </section>
+        <section class="inspector-panel play-guide" aria-labelledby="play-title">
+          <h2 id="play-title">как играть</h2>
+          <p><kbd>←</kbd><kbd>→</kbd> или <kbd>A</kbd><kbd>D</kbd> — ходить</p>
+          <p><kbd>пробел</kbd> — прыгать</p>
+          <p><kbd>Q</kbd><kbd>E</kbd> или ползунок — мотать видео</p>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="workbench-foot">
+      <p id="status" role="status">можно открыть своё видео или начать с демо)</p>
+      <p class="privacy-note">видео остаётся у тебя</p>
+    </footer>
+  </main>
+</body>
+</html>
